@@ -6,7 +6,7 @@ using Unity.Jobs.LowLevel.Unsafe;
 
 namespace Unity.Jobs
 {
-#if !UNITY_ZEROPLAYER
+#if !UNITY_DOTSPLAYER
     public static class IJobParallelForDeferExtensions
     {
         internal struct JobStructNativeList<T> where T: struct, IJobParallelFor

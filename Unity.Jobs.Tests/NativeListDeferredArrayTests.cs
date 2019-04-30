@@ -54,6 +54,7 @@ public class NativeListDeferredArrayTests
         }
     }
 
+#if !UNITY_DOTSPLAYER
     [Test]
     public void ResizedListToDeferredJobArray([Values(0, 1, 2, 3, 4, 5, 6, 42, 97, 1023)]int length)
     {
@@ -89,6 +90,7 @@ public class NativeListDeferredArrayTests
 
         list.Dispose ();
     }
+#endif
     
     [Test]
     public void ResizedListToDeferredJobArray()
@@ -104,7 +106,8 @@ public class NativeListDeferredArrayTests
 
         list.Dispose ();
     }
-    
+
+#if !UNITY_DOTSPLAYER
     [Test]
     public void ResizeListWhileJobIsRunning()
     {
@@ -119,7 +122,7 @@ public class NativeListDeferredArrayTests
         jobHandle.Complete();
         list.Dispose ();
     }
-    
+
     
     [Test]
     public void AliasArrayThrows()
@@ -142,4 +145,5 @@ public class NativeListDeferredArrayTests
 
         list.Dispose();
     }
+#endif
 }
