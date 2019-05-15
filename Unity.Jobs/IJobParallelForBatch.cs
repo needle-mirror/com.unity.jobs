@@ -1,5 +1,4 @@
-﻿#if ENABLE_MANAGED_JOBS
-using System;
+﻿using System;
 using Unity.Jobs.LowLevel.Unsafe;
 using Unity.Collections.LowLevel.Unsafe;
 
@@ -56,5 +55,3 @@ namespace Unity.Jobs
         }
     }
 }
-
-#endif // ENABLE_MANAGED_JOBS

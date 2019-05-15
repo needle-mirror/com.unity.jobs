@@ -1,7 +1,10 @@
 ﻿using System;
 using NUnit.Framework;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+
+#if !UNITY_DOTSPLAYER
 
 public class NativeListDeferredArrayTests
 {
@@ -26,7 +29,7 @@ public class NativeListDeferredArrayTests
         }
     }
     
-    struct SetArrayValuesJobParallel : IJobParallelFor
+    struct SetArrayValuesJobParallel : IJobParallelForDefer
     {
         public NativeArray<int> array;
 
@@ -36,7 +39,7 @@ public class NativeListDeferredArrayTests
         }
     }
     
-    struct GetArrayValuesJobParallel : IJobParallelFor
+    struct GetArrayValuesJobParallel : IJobParallelForDefer
     {
         [ReadOnly]
         public NativeArray<int> array;
@@ -47,14 +50,13 @@ public class NativeListDeferredArrayTests
     }
 
     
-    struct ParallelForWithoutList : IJobParallelFor
+    struct ParallelForWithoutList : IJobParallelForDefer
     {
         public void Execute(int index)
         {
         }
     }
 
-#if !UNITY_DOTSPLAYER
     [Test]
     public void ResizedListToDeferredJobArray([Values(0, 1, 2, 3, 4, 5, 6, 42, 97, 1023)]int length)
     {
@@ -74,6 +76,25 @@ public class NativeListDeferredArrayTests
     }
     
     [Test]
+    unsafe public void DeferredParallelForFromIntPtr()
+    {
+        int length = 10;
+        
+        var lengthValue = new NativeArray<int> (1, Allocator.TempJob);
+        lengthValue[0] = length;
+        var array = new NativeArray<int> (length, Allocator.TempJob);
+
+        var setValuesJob = new SetArrayValuesJobParallel { array = array };
+        setValuesJob.Schedule((int*)lengthValue.GetUnsafePtr(), 3).Complete();
+        
+        for (int i = 0;i != array.Length;i++)
+            Assert.AreEqual(length, array[i]);
+
+        lengthValue.Dispose ();
+        array.Dispose ();
+    }
+    
+    [Test]
     public void ResizeListBeforeSchedule([Values(5)]int length)
     {
         var list = new NativeList<int> (Allocator.TempJob);
@@ -90,7 +111,6 @@ public class NativeListDeferredArrayTests
 
         list.Dispose ();
     }
-#endif
     
     [Test]
     public void ResizedListToDeferredJobArray()
@@ -107,7 +127,6 @@ public class NativeListDeferredArrayTests
         list.Dispose ();
     }
 
-#if !UNITY_DOTSPLAYER
     [Test]
     public void ResizeListWhileJobIsRunning()
     {
@@ -134,7 +153,7 @@ public class NativeListDeferredArrayTests
 
         list.Dispose ();
     }
-    
+
     [Test]
     public void DeferredListCantBeDeletedWhileJobIsRunning()
     {
@@ -145,5 +164,5 @@ public class NativeListDeferredArrayTests
 
         list.Dispose();
     }
-#endif
 }
+#endif
