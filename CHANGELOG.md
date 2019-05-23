@@ -1,5 +1,13 @@
 # Change log
 
+
+## [0.0.7-preview.13] - 2019-05-24
+
+### Changes
+
+* Updated dependency for `com.unity.collections` 
+
+
 ## [0.0.7-preview.12] - 2019-05-16
 
 ### New Features
