@@ -4,8 +4,6 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 
-#if !UNITY_DOTSPLAYER
-
 public class NativeListDeferredArrayTests
 {
     struct AliasJob : IJob
@@ -25,7 +23,7 @@ public class NativeListDeferredArrayTests
 
         public void Execute()
         {
-            list.ResizeUninitialized(ResizeLength);
+            list.Resize(ResizeLength, NativeArrayOptions.UninitializedMemory);
         }
     }
     
@@ -113,6 +111,9 @@ public class NativeListDeferredArrayTests
     }
     
     [Test]
+#if UNITY_DOTSPLAYER
+    [Ignore("DOTS runtime resolves deferred lists on first access")]
+#endif
     public void ResizedListToDeferredJobArray()
     {
         var list = new NativeList<int> (Allocator.TempJob);
@@ -128,15 +129,18 @@ public class NativeListDeferredArrayTests
     }
 
     [Test]
+#if UNITY_DOTSPLAYER
+    [Ignore("DOTS runtime doesn't check for list usage within a job")]
+#endif
     public void ResizeListWhileJobIsRunning()
     {
         var list = new NativeList<int> (Allocator.TempJob);
-        list.ResizeUninitialized(42);
+        list.Resize(42, NativeArrayOptions.UninitializedMemory);
 
         var setValuesJob = new GetArrayValuesJobParallel { array = list.AsDeferredJobArray() };
         var jobHandle = setValuesJob.Schedule(list, 3);
         
-        Assert.Throws<InvalidOperationException>(() => list.ResizeUninitialized(1) );
+        Assert.Throws<InvalidOperationException>(() => list.Resize(1, NativeArrayOptions.UninitializedMemory) );
 
         jobHandle.Complete();
         list.Dispose ();
@@ -144,6 +148,9 @@ public class NativeListDeferredArrayTests
 
     
     [Test]
+#if UNITY_DOTSPLAYER
+    [Ignore("DOTS runtime doesn't check for list usage within a job")]
+#endif
     public void AliasArrayThrows()
     {
         var list = new NativeList<int> (Allocator.TempJob);
@@ -155,6 +162,9 @@ public class NativeListDeferredArrayTests
     }
 
     [Test]
+#if UNITY_DOTSPLAYER
+    [Ignore("DOTS runtime doesn't check for list usage within a job")]
+#endif
     public void DeferredListCantBeDeletedWhileJobIsRunning()
     {
         var list = new NativeList<int> (Allocator.TempJob);
@@ -164,5 +174,21 @@ public class NativeListDeferredArrayTests
 
         list.Dispose();
     }
-}
+    
+    [Test]
+#if UNITY_DOTSPLAYER
+    [Ignore("DOTS runtime doesn't check for list usage within a job")]
 #endif
+    public void DeferredArrayCantBeAccessedOnMainthread()
+    {
+        var list = new NativeList<int> (Allocator.TempJob);
+        list.Add(1);
+        
+        var defer = list.AsDeferredJobArray();
+        
+        Assert.AreEqual(0, defer.Length);
+        Assert.Throws<IndexOutOfRangeException>(() => defer[0] = 5 );
+
+        list.Dispose();
+    }
+}

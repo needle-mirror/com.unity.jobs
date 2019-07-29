@@ -1,5 +1,11 @@
 # Change log
 
+## [0.1.0-preview] - 2019-07-30
+
+### Changes
+
+* Updated the dependencies for this package.
+
 
 ## [0.0.7-preview.13] - 2019-05-24
 
