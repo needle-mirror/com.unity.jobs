@@ -14,11 +14,7 @@ namespace Unity.Jobs
 
     public static class JobParallelIndexListExtensions
     {
-        public struct JobStructProduce<T>
-#if UNITY_AVOID_REFLECTION
-                : IJob
-#endif
-            where T : struct, IJobParallelForFilter
+        public struct JobStructProduce<T> where T : struct, IJobParallelForFilter
         {
             public struct JobDataWithFiltering
             {
@@ -28,42 +24,31 @@ namespace Unity.Jobs
                 public T data;
             }
 
-#if UNITY_AVOID_REFLECTION
-            public JobDataWithFiltering FilteringData;
-
-            public void Execute()
-            {
-                if (FilteringData.appendCount == -1)
-                    ExecuteFilter(ref FilteringData, IntPtr.Zero);
-                else
-                    ExecuteAppend(ref FilteringData, IntPtr.Zero);
-            }
-#else
-            static public IntPtr jobReflectionData;
+            public static IntPtr jobReflectionData;
 
             public static IntPtr Initialize()
             {
                 if (jobReflectionData == IntPtr.Zero)
                     // @TODO: Use parallel for job... (Need to expose combine jobs)
 
-                    jobReflectionData = JobsUtility.CreateJobReflectionData(typeof(JobDataWithFiltering), typeof(T), JobType.Single, (ExecuteJobFunction)Execute);
+                    jobReflectionData = JobsUtility.CreateJobReflectionData(typeof(JobDataWithFiltering), typeof(T),
+                        JobType.Single, (ExecuteJobFunction)Execute);
 
                 return jobReflectionData;
             }
-            public delegate void ExecuteJobFunction(ref JobDataWithFiltering data, System.IntPtr additionalPtr, System.IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex);
+            public delegate void ExecuteJobFunction(ref JobDataWithFiltering data, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex);
 
             // @TODO: Use parallel for job... (Need to expose combine jobs)
 
-            public unsafe static void Execute(ref JobDataWithFiltering jobData, System.IntPtr additionalPtr, System.IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex)
+            public static void Execute(ref JobDataWithFiltering jobData, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex)
             {
                 if (jobData.appendCount == -1)
                     ExecuteFilter(ref jobData, bufferRangePatchData);
                 else
                     ExecuteAppend(ref jobData, bufferRangePatchData);
             }
-#endif
 
-            public unsafe static void ExecuteAppend(ref JobDataWithFiltering jobData, System.IntPtr bufferRangePatchData)
+            public static unsafe void ExecuteAppend(ref JobDataWithFiltering jobData, System.IntPtr bufferRangePatchData)
             {
                 int oldLength = jobData.outputIndices.Length;
                 jobData.outputIndices.Capacity = math.max(jobData.appendCount + oldLength, jobData.outputIndices.Capacity);
@@ -72,7 +57,8 @@ namespace Unity.Jobs
                 int outputIndex = oldLength;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-                JobsUtility.PatchBufferMinMaxRanges (bufferRangePatchData, UnsafeUtility.AddressOf (ref jobData), 0, jobData.appendCount);
+                JobsUtility.PatchBufferMinMaxRanges (bufferRangePatchData, UnsafeUtility.AddressOf (ref jobData),
+                    0, jobData.appendCount);
 #endif
                 for (int i = 0;i != jobData.appendCount;i++)
                 {
@@ -86,7 +72,7 @@ namespace Unity.Jobs
                 jobData.outputIndices.ResizeUninitialized(outputIndex);
             }
 
-            public unsafe static void ExecuteFilter(ref JobDataWithFiltering jobData, System.IntPtr bufferRangePatchData)
+            public static unsafe void ExecuteFilter(ref JobDataWithFiltering jobData, System.IntPtr bufferRangePatchData)
             {
                 int* outputPtr = (int*)jobData.outputIndices.GetUnsafePtr();
                 int inputLength = jobData.outputIndices.Length;
@@ -111,40 +97,30 @@ namespace Unity.Jobs
             }
         }
 
-        unsafe static public JobHandle ScheduleAppend<T>(this T jobData, NativeList<int> indices, int arrayLength, int innerloopBatchCount, JobHandle dependsOn = new JobHandle()) where T : struct, IJobParallelForFilter
+        public static unsafe JobHandle ScheduleAppend<T>(this T jobData, NativeList<int> indices, int arrayLength, int innerloopBatchCount, JobHandle dependsOn = new JobHandle()) where T : struct, IJobParallelForFilter
         {
-            JobStructProduce<T>.JobDataWithFiltering fullData;
-            fullData.data = jobData;
-            fullData.outputIndices = indices;
-            fullData.appendCount = arrayLength;
+            JobStructProduce<T>.JobDataWithFiltering fullData = new JobStructProduce<T>.JobDataWithFiltering()
+            {
+                data = jobData,
+                outputIndices = indices,
+                appendCount = arrayLength
+            };
 
-#if UNITY_AVOID_REFLECTION
-            JobStructProduce<T> job;
-            job.FilteringData = fullData;
-            return job.Schedule(dependsOn);
-#else
             var scheduleParams = new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref fullData), JobStructProduce<T>.Initialize(), dependsOn, ScheduleMode.Batched);
-
             return JobsUtility.Schedule(ref scheduleParams);
-#endif
         }
 
-        unsafe static public JobHandle ScheduleFilter<T>(this T jobData, NativeList<int> indices, int innerloopBatchCount, JobHandle dependsOn = new JobHandle()) where T : struct, IJobParallelForFilter
+        public static unsafe JobHandle ScheduleFilter<T>(this T jobData, NativeList<int> indices, int innerloopBatchCount, JobHandle dependsOn = new JobHandle()) where T : struct, IJobParallelForFilter
         {
-            JobStructProduce<T>.JobDataWithFiltering fullData;
-            fullData.data = jobData;
-            fullData.outputIndices = indices;
-            fullData.appendCount = -1;
+            JobStructProduce<T>.JobDataWithFiltering fullData = new JobStructProduce<T>.JobDataWithFiltering()
+            {
+                data = jobData,
+                outputIndices = indices,
+                appendCount = -1
+            };
 
-#if UNITY_AVOID_REFLECTION
-            JobStructProduce<T> job;
-            job.FilteringData = fullData;
-            return job.Schedule(dependsOn);
-#else
             var scheduleParams = new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref fullData), JobStructProduce<T>.Initialize(), dependsOn, ScheduleMode.Batched);
-
             return JobsUtility.Schedule(ref scheduleParams);
-#endif
         }
 
         //@TODO: RUN

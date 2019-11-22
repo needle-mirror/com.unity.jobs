@@ -55,6 +55,14 @@ public class NativeListDeferredArrayTests
         }
     }
 
+#if UNITY_DOTSPLAYER
+    [SetUp]
+    public void Init()
+    {
+        Unity.Burst.DotsRuntimeInitStatics.Init();
+    }
+#endif
+
     [Test]
     public void ResizedListToDeferredJobArray([Values(0, 1, 2, 3, 4, 5, 6, 42, 97, 1023)]int length)
     {
