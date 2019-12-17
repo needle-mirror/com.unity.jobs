@@ -4,6 +4,45 @@ using Unity.Jobs.LowLevel.Unsafe;
 
 class JobsMenu
 {
+#if UNITY_2020_1_OR_NEWER
+    private static int savedJobWorkerCount = JobsUtility.JobWorkerCount;
+
+    const string kUseJobThreads = "Jobs/Use Job Threads";
+
+    [MenuItem(kUseJobThreads, false)]
+    static void SwitchUseJobThreads()
+    {
+        if (JobsUtility.JobWorkerCount > 0)
+        {
+            savedJobWorkerCount = JobsUtility.JobWorkerCount;
+            try
+            {
+                JobsUtility.JobWorkerCount = 0;
+            }
+            catch (System.ArgumentOutOfRangeException e) when (e.ParamName == "JobWorkerCount")
+            {
+                UnityEngine.Debug.LogWarning("Disabling Job Threads requires Unity Version 2020.1.a15 or newer");
+            }
+        }
+        else
+        {
+            JobsUtility.JobWorkerCount = savedJobWorkerCount;
+            if (savedJobWorkerCount == 0)
+            {
+                JobsUtility.ResetJobWorkerCount();
+            }
+        }
+    }
+
+    [MenuItem(kUseJobThreads, true)]
+    static bool SwitchUseJobThreadsValidate()
+    {
+        Menu.SetChecked(kUseJobThreads, (JobsUtility.JobWorkerCount > 0));
+
+        return true;
+    }
+#endif // #if UNITY_2020_1_OR_NEWER
+
     const string kDebuggerMenu = "Jobs/JobsDebugger";
 
     [MenuItem(kDebuggerMenu, false)]

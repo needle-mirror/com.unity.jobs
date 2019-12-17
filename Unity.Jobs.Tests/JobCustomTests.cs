@@ -40,7 +40,8 @@ namespace Unity.Jobs.Tests
             var data = new CustomJobData<T>
             {
                 UserJobData = jobData,
-                abData = world.abData
+                abData = world.abData,
+                testArray = new NativeArray<int>(10, Allocator.TempJob)
             };
 
             var parameters = new JobsUtility.JobScheduleParameters(
@@ -63,6 +64,8 @@ namespace Unity.Jobs.Tests
         {
             public T UserJobData;
             public TestData abData;
+            [DeallocateOnJobCompletion]
+            public NativeArray<int> testArray;
         }
 
         internal struct CustomJobProcess<T> where T : struct, ICustomJob
@@ -105,7 +108,7 @@ namespace Unity.Jobs.Tests
 #endif
                 jobData.UserJobData.Execute(ref jobData.abData);
 #if JOBS_CODEGEN_SAMPLE
-                jobData.UserJobData.CleanupJobFn_Gen();
+                jobData.UserJobData.CleanupJobFn_Gen(void* structPtr);
 #endif
             }
         }
@@ -115,7 +118,10 @@ namespace Unity.Jobs.Tests
     {
         struct CustomJob1 : ICustomJob
         {
+            [DeallocateOnJobCompletion]
+            public NativeArray<uint> jobData;    // Both the wrapper and CustomJob1 have [DeallocateOnJobCompletion]
             public NativeArray<int> result;
+
             public void Execute(ref TestData data)
             {
                 result[0] = data.a + data.b;
@@ -124,7 +130,15 @@ namespace Unity.Jobs.Tests
 #if JOBS_CODEGEN_SAMPLE
             public int PrepareJobAtScheduleTimeFn_Gen() { /* safety handles */ }
             public void PrepareJobAtExecuteTimeFn_Gen(int index) { /* threadIndex */ }
-            public void CleanupJobFn_Gen() { /* disposes memory */ }
+            public void CleanupJobFn_Gen(void* ptr)
+            {
+                // If there is no wrapper, ptr will be null.
+                // Can also be null for IJobForEach.
+                if (ptr == null) return;
+
+                CustomJobData<CustomJob1> jobData = *((CustomJobData<CustomJob1>*)ptr);
+                jobData.testArray.Dispose();
+            }
 #endif
         }
 
@@ -140,8 +154,18 @@ namespace Unity.Jobs.Tests
 #if JOBS_CODEGEN_SAMPLE
             public int PrepareJobAtScheduleTimeFn_Gen() { /* safety handles */ }
             public void PrepareJobAtExecuteTimeFn_Gen(int index) { /* threadIndex */ }
-            public void CleanupJobFn_Geni() { /* disposes memory */ }
+            public void CleanupJobFn_Gen(void*) { /* disposes memory */ }
 #endif
+        }
+
+        struct CustomJob3<T> : ICustomJob
+        {
+            public NativeArray<int> result;
+
+            public void Execute(ref TestData data)
+            {
+                result[0] = data.a + 3 * data.b;
+            }
         }
 
 #if UNITY_DOTSPLAYER
@@ -158,7 +182,8 @@ namespace Unity.Jobs.Tests
             NativeArray<int> result = new NativeArray<int>(1, Allocator.TempJob);
             CustomJob1 customJob1 = new CustomJob1()
             {
-                result = result
+                result = result,
+                jobData = new NativeArray<uint>(20, Allocator.TempJob)
             };
             CustomWorld customWorld = new CustomWorld()
             {
@@ -197,5 +222,29 @@ namespace Unity.Jobs.Tests
             Assert.AreEqual(5, result[0]);
             result.Dispose();
         }
+
+        [Test]
+        public void ScheduleCustomJob3()
+        {
+            NativeArray<int> result = new NativeArray<int>(1, Allocator.TempJob);
+            CustomJob3<int> customJob3 = new CustomJob3<int>()
+            {
+                result = result
+            };
+            CustomWorld customWorld = new CustomWorld()
+            {
+                abData = new TestData()
+                {
+                    a = 1,
+                    b = 2
+                }
+            };
+            var handle = customJob3.Schedule(ref customWorld, new JobHandle());
+            handle.Complete();
+
+            Assert.AreEqual(7, result[0]);
+            result.Dispose();
+        }
+
     }
 }

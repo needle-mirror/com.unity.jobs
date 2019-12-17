@@ -7,15 +7,21 @@ namespace Unity.Jobs.Tests.ManagedJobs
 {
     public class JobTests : JobTestsFixture
     {
-        [Test]
+        /*
+         * these two tests used to test that a job that inherited from both IJob and IJobParallelFor would work as expected
+         * but that's probably crazy.
+         */
+        /*[Test]
         public void Scheduling()
         {
             var job = data.Schedule();
             job.Complete();
             ExpectOutputSumOfInput0And1();
-        }
+        }*/
 
-        [Test]
+
+        /*[Test]
+         
         public void Scheduling_With_Dependencies()
         {
             data.input0 = input0;
@@ -32,7 +38,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
             // Wait for completion
             job2.Complete();
             ExpectOutputSumOfInput0And1And2();
-        }
+        }*/
 
         [Test]
         public void ForEach_Scheduling_With_Dependencies()
@@ -46,7 +52,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
             data.input0 = output2;
             data.input1 = input2;
             data.output = output;
-            var job2 = data.Schedule(job1);
+            var job2 = data.Schedule(output.Length, 1, job1);
 
             // Wait for completion
             job2.Complete();
