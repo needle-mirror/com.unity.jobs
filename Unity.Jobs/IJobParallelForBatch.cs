@@ -18,18 +18,14 @@ namespace Unity.Jobs
         {
             static IntPtr JobReflectionData;
 
-            public static unsafe IntPtr Initialize()
+            public static IntPtr Initialize()
             {
                 if (JobReflectionData == IntPtr.Zero)
                 {
-                    JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T),
-#if UNITY_DOTSPLAYER
-                        // TODO remove this #if
-                        // https://unity3d.atlassian.net/browse/DOTSR-379
-                        typeof(T),
-#endif
+                    JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T), typeof(T),
                         JobType.ParallelFor, (ExecuteJobFunction)Execute);
                 }
+
                 return JobReflectionData;
             }
 

@@ -1,11 +1,18 @@
 # Change log
 
 
+## [0.2.5] - 2020-02-17
+
+### Changed
+
+* Updated dependencies of this package.
+
+
 ## [0.2.4] - 2020-01-28
 
 ### Changed
 
-* Updated dependencies for this package.
+* Updated dependencies of this package.
 
 
 ## [0.2.3] - 2020-01-16
