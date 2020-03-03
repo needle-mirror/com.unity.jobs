@@ -1,5 +1,12 @@
 # Change log
 
+## [0.2.6] - 2020-03-03
+
+### Changed
+
+* Updated dependencies of this package.
+* Maintain JobsDebugger menu item value between sessions.
+
 
 ## [0.2.5] - 2020-02-17
 

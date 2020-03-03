@@ -44,18 +44,28 @@ class JobsMenu
 #endif // #if UNITY_2020_1_OR_NEWER
 
     const string kDebuggerMenu = "Jobs/JobsDebugger";
+    const string kEditorPrefJobDebuggerEnabled = "JobsUtility.JobDebuggerEnabled";
+
+    [InitializeOnLoad]
+    internal class JobsDebuggerInitialize
+    {
+        static JobsDebuggerInitialize()
+        {
+            JobsUtility.JobDebuggerEnabled = EditorPrefs.GetBool(kEditorPrefJobDebuggerEnabled, JobsUtility.JobDebuggerEnabled);
+        }
+    }
 
     [MenuItem(kDebuggerMenu, false)]
     static void SwitchJobsDebugger()
     {
         JobsUtility.JobDebuggerEnabled = !JobsUtility.JobDebuggerEnabled;
+        EditorPrefs.SetBool(kEditorPrefJobDebuggerEnabled, JobsUtility.JobDebuggerEnabled);
     }
 
     [MenuItem(kDebuggerMenu, true)]
     static bool SwitchJobsDebuggerValidate()
     {
         Menu.SetChecked(kDebuggerMenu, JobsUtility.JobDebuggerEnabled);
-
         return true;
     }
 
