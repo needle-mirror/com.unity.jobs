@@ -15,7 +15,7 @@ namespace Unity.Jobs
     /// Batch size should generally be chosen depending on the amount of work performed in the job. A simple job, for example adding a couple of float3 to each other should probably have a batch size of 32 to 128. However if the work performed is very expensive then it is best to use a small batch size, for expensive work a batch size of 1 is totally fine. IJobParallelFor performs work stealing using atomic operations. Batch sizes can be small but they are not for free.
     /// The returned JobHandle can be used to ensure that the job has completed. Or it can be passed to other jobs as a dependency, thus ensuring the jobs are executed one after another on the worker threads.
     /// </summary>
-    [JobProducerType(typeof (IJobParallelForDeferExtensions.JobStructDefer<>))]
+    [JobProducerType(typeof (IJobParallelForDeferExtensions.JobParallelForDeferProducer<>))]
     public interface IJobParallelForDefer
     {
         /// <summary>
@@ -27,24 +27,24 @@ namespace Unity.Jobs
 
     public static class IJobParallelForDeferExtensions
     {
-        internal struct JobStructDefer<T> where T : struct, IJobParallelForDefer
+        internal struct JobParallelForDeferProducer<T> where T : struct, IJobParallelForDefer
         {
-            static IntPtr JobReflectionData;
+            static IntPtr s_JobReflectionData;
 
             public static unsafe IntPtr Initialize()
             {
-                if (JobReflectionData == IntPtr.Zero)
+                if (s_JobReflectionData == IntPtr.Zero)
                 {
-                    JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T), typeof(T),
+                    s_JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T), typeof(T),
                         JobType.ParallelFor, (ExecuteJobFunction)Execute);
                 }
 
-                return JobReflectionData;
+                return s_JobReflectionData;
             }
 
-            public delegate void ExecuteJobFunction(ref T jobStruct, System.IntPtr additionalPtr, System.IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex);
+            public delegate void ExecuteJobFunction(ref T jobData, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex);
 
-            public unsafe static void Execute(ref T jobData, System.IntPtr additionalPtr, System.IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex)
+            public unsafe static void Execute(ref T jobData, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex)
             {
                 while (true)
                 {
@@ -78,7 +78,7 @@ namespace Unity.Jobs
             void* atomicSafetyHandlePtr = null;
             var scheduleParams = new JobsUtility.JobScheduleParameters(
                 UnsafeUtility.AddressOf(ref jobData),
-                JobStructDefer<T>.Initialize(), dependsOn, ScheduleMode.Batched);
+                JobParallelForDeferProducer<T>.Initialize(), dependsOn, ScheduleMode.Batched);
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             var safety = NativeListUnsafeUtility.GetAtomicSafetyHandle(ref list);
@@ -105,7 +105,7 @@ namespace Unity.Jobs
         {
             var scheduleParams = new JobsUtility.JobScheduleParameters(
                 UnsafeUtility.AddressOf(ref jobData),
-                JobStructDefer<T>.Initialize(), dependsOn, ScheduleMode.Batched);
+                JobParallelForDeferProducer<T>.Initialize(), dependsOn, ScheduleMode.Batched);
 
             var forEachListPtr = (byte*) forEachCount - sizeof(void*);
             return JobsUtility.ScheduleParallelForDeferArraySize(ref scheduleParams, innerloopBatchCount,

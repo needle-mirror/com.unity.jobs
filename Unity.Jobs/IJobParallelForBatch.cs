@@ -6,7 +6,7 @@ using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Jobs
 {
-    [JobProducerType(typeof(IJobParallelForBatchExtensions.ParallelForBatchJobStruct<>))]
+    [JobProducerType(typeof(IJobParallelForBatchExtensions.JobParallelForBatchProducer<>))]
     public interface IJobParallelForBatch
     {
         void Execute(int startIndex, int count);
@@ -14,23 +14,23 @@ namespace Unity.Jobs
 
     public static class IJobParallelForBatchExtensions
     {
-        internal struct ParallelForBatchJobStruct<T> where T : struct, IJobParallelForBatch
+        internal struct JobParallelForBatchProducer<T> where T : struct, IJobParallelForBatch
         {
-            static IntPtr JobReflectionData;
+            static IntPtr s_JobReflectionData;
 
             public static IntPtr Initialize()
             {
-                if (JobReflectionData == IntPtr.Zero)
+                if (s_JobReflectionData == IntPtr.Zero)
                 {
-                    JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T), typeof(T),
+                    s_JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T), typeof(T),
                         JobType.ParallelFor, (ExecuteJobFunction)Execute);
                 }
 
-                return JobReflectionData;
+                return s_JobReflectionData;
             }
 
-            public delegate void ExecuteJobFunction(ref T jobData, System.IntPtr additionalPtr, System.IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex);
-            public unsafe static void Execute(ref T jobData, System.IntPtr additionalPtr, System.IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex)
+            public delegate void ExecuteJobFunction(ref T jobData, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex);
+            public unsafe static void Execute(ref T jobData, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex)
             {
                 while (true)
                 {
@@ -53,7 +53,7 @@ namespace Unity.Jobs
         {
             var scheduleParams = new JobsUtility.JobScheduleParameters(
                 UnsafeUtility.AddressOf(ref jobData),
-                ParallelForBatchJobStruct<T>.Initialize(),
+                JobParallelForBatchProducer<T>.Initialize(),
                 dependsOn,
                 ScheduleMode.Batched);
 
@@ -64,7 +64,7 @@ namespace Unity.Jobs
         {
             var scheduleParams =
                 new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref jobData),
-                    ParallelForBatchJobStruct<T>.Initialize(), new JobHandle(), ScheduleMode.Run);
+                    JobParallelForBatchProducer<T>.Initialize(), new JobHandle(), ScheduleMode.Run);
             JobsUtility.ScheduleParallelFor(ref scheduleParams, arrayLength, arrayLength);
         }
     }

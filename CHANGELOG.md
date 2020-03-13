@@ -1,5 +1,13 @@
 # Change log
 
+## [0.2.7] - 2020-03-13
+
+### Changed
+
+* Updated dependencies of this package.
+* The internals of IJobParallelForFilter are now `internal` rather than `public`
+
+
 ## [0.2.6] - 2020-03-03
 
 ### Changed
