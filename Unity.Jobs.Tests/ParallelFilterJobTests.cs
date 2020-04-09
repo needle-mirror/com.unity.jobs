@@ -42,14 +42,6 @@ public class ParallelFilterJobTests
 		}
 	}
 
-#if UNITY_DOTSPLAYER
-    [SetUp]
-    public void Init()
-    {
-        Unity.Burst.DotsRuntimeInitStatics.Init();
-    }
-#endif
-
     [Test]
 	public void AddElementForEach([Values]bool userFilterJob)
 	{

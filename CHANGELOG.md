@@ -1,5 +1,10 @@
 # Change log
 
+## [0.2.8] - 2020-04-08
+
+* Updated dependencies of this package.
+
+
 ## [0.2.7] - 2020-03-13
 
 ### Changed
@@ -80,14 +85,14 @@
 
 ### Changes
 
-* Updated dependency for `com.unity.collections` 
+* Updated dependency for `com.unity.collections`
 
 
 ## [0.0.7-preview.12] - 2019-05-16
 
 ### New Features
 
-* IJobParallelForDeferred has been added to allow a parallel for job to be scheduled even if it's for each count will only be known during another jobs execution. 
+* IJobParallelForDeferred has been added to allow a parallel for job to be scheduled even if it's for each count will only be known during another jobs execution.
 
 ### Upgrade guide
 * Previously IJobParallelFor had a overload with the same IJobParallelForDeferred functionality. This is no longer supported since it was not working in Standalone builds using Burst. Now you need to explicitly implement IJobParallelForDeferred if you want to use the deferred schedule parallel for.

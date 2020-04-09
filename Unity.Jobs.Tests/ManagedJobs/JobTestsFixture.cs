@@ -56,10 +56,6 @@ namespace Unity.Jobs.Tests.ManagedJobs
         [SetUp]
         public void Init()
         {
-#if UNITY_DOTSPLAYER
-            Unity.Burst.DotsRuntimeInitStatics.Init();
-#endif
-
             expectedInput0 = new int[10];
             input0 = new NativeArray<int>(10, Allocator.Persistent);
             input1 = new NativeArray<int>(10, Allocator.Persistent);

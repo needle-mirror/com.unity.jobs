@@ -55,14 +55,6 @@ public class NativeListDeferredArrayTests
         }
     }
 
-#if UNITY_DOTSPLAYER
-    [SetUp]
-    public void Init()
-    {
-        Unity.Burst.DotsRuntimeInitStatics.Init();
-    }
-#endif
-
     [Test]
     public void ResizedListToDeferredJobArray([Values(0, 1, 2, 3, 4, 5, 6, 42, 97, 1023)]int length)
     {
@@ -78,7 +70,7 @@ public class NativeListDeferredArrayTests
         for (int i = 0;i != list.Length;i++)
             Assert.AreEqual(length, list[i]);
 
-        list.Dispose ();
+        list.Dispose();
     }
     
     [Test]
@@ -96,8 +88,8 @@ public class NativeListDeferredArrayTests
         for (int i = 0;i != array.Length;i++)
             Assert.AreEqual(length, array[i]);
 
-        lengthValue.Dispose ();
-        array.Dispose ();
+        lengthValue.Dispose();
+        array.Dispose();
     }
     
     [Test]
@@ -115,7 +107,7 @@ public class NativeListDeferredArrayTests
         for (int i = 0;i != list.Length;i++)
             Assert.AreEqual(length, list[i]);
 
-        list.Dispose ();
+        list.Dispose();
     }
     
     [Test]
@@ -133,7 +125,7 @@ public class NativeListDeferredArrayTests
 #pragma warning restore 0219
         Assert.AreEqual(0, array.Length);
 
-        list.Dispose ();
+        list.Dispose();
     }
 
     [Test]
@@ -151,7 +143,7 @@ public class NativeListDeferredArrayTests
         Assert.Throws<InvalidOperationException>(() => list.Resize(1, NativeArrayOptions.UninitializedMemory) );
 
         jobHandle.Complete();
-        list.Dispose ();
+        list.Dispose();
     }
 
     
@@ -166,7 +158,7 @@ public class NativeListDeferredArrayTests
         var aliasJob = new AliasJob{ list = list, array = list.AsDeferredJobArray() };
         Assert.Throws<InvalidOperationException>(() => aliasJob.Schedule() );
 
-        list.Dispose ();
+        list.Dispose();
     }
 
     [Test]
