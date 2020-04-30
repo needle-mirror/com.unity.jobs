@@ -10,7 +10,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
          * this used to test both, and maybe it should again, but we have to make GetExecuteMethod() work with
          * multiple interfaces, hopefully in a non-global way
          */
-        public struct SumDataParallelForJob : /*IJob,*/IJobParallelFor
+        public struct SumDataParallelForJob : /*IJob,*/ IJobParallelFor
         {
             [ReadOnly] public NativeArray<int> input0;
 
@@ -18,11 +18,11 @@ namespace Unity.Jobs.Tests.ManagedJobs
 
             public NativeArray<int> output;
 
-          /*  public void Execute()
-            {
-                for (var i = 0; i < output.Length; ++i)
-                    output[i] = input0[i] + input1[i];
-            }*/
+            /*  public void Execute()
+              {
+                  for (var i = 0; i < output.Length; ++i)
+                      output[i] = input0[i] + input1[i];
+              }*/
 
             public void Execute(int i)
             {
@@ -32,7 +32,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
 
         public struct CopyAndDestroyNativeArrayParallelForJob : IJobParallelFor
         {
-            [ReadOnlyAttribute] [DeallocateOnJobCompletionAttribute]
+            [ReadOnlyAttribute][DeallocateOnJobCompletionAttribute]
             public NativeArray<int> input;
 
             public NativeArray<int> output;

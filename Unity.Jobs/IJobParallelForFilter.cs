@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.Jobs.LowLevel.Unsafe;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -36,6 +36,7 @@ namespace Unity.Jobs
 
                 return s_JobReflectionData;
             }
+
             public delegate void ExecuteJobFunction(ref JobWrapper jobWrapper, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex);
 
             // @TODO: Use parallel for job... (Need to expose combine jobs)
@@ -57,12 +58,12 @@ namespace Unity.Jobs
                 int outputIndex = oldLength;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-                JobsUtility.PatchBufferMinMaxRanges (bufferRangePatchData, UnsafeUtility.AddressOf (ref jobWrapper),
+                JobsUtility.PatchBufferMinMaxRanges(bufferRangePatchData, UnsafeUtility.AddressOf(ref jobWrapper),
                     0, jobWrapper.appendCount);
 #endif
-                for (int i = 0;i != jobWrapper.appendCount;i++)
+                for (int i = 0; i != jobWrapper.appendCount; i++)
                 {
-                    if (jobWrapper.JobData.Execute (i))
+                    if (jobWrapper.JobData.Execute(i))
                     {
                         outputPtr[outputIndex] = i;
                         outputIndex++;
@@ -78,12 +79,12 @@ namespace Unity.Jobs
                 int inputLength = jobWrapper.outputIndices.Length;
 
                 int outputCount = 0;
-                for (int i = 0;i != inputLength;i++)
+                for (int i = 0; i != inputLength; i++)
                 {
                     int inputIndex = outputPtr[i];
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-                    JobsUtility.PatchBufferMinMaxRanges (bufferRangePatchData, UnsafeUtility.AddressOf (ref jobWrapper), inputIndex, 1);
+                    JobsUtility.PatchBufferMinMaxRanges(bufferRangePatchData, UnsafeUtility.AddressOf(ref jobWrapper), inputIndex, 1);
 #endif
 
                     if (jobWrapper.JobData.Execute(inputIndex))

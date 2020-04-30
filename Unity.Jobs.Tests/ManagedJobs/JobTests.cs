@@ -1,6 +1,7 @@
+using System;
 using NUnit.Framework;
 using Unity.Collections;
-
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 
 namespace Unity.Jobs.Tests.ManagedJobs
@@ -21,7 +22,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
 
 
         /*[Test]
-         
+
         public void Scheduling_With_Dependencies()
         {
             data.input0 = input0;
@@ -75,12 +76,20 @@ namespace Unity.Jobs.Tests.ManagedJobs
         }
 
         [Test]
+#if UNITY_DOTSPLAYER_IL2CPP
+        // https://unity3d.atlassian.net/browse/DOTSR-1365
+        [Ignore("DOTSPLAYER_IL2CPP throws exception on AddrOfPinnedObject() in NativeArray")]
+#endif
         public void Deallocate_Temp_NativeArray_From_Job()
         {
             TestDeallocateNativeArrayFromJob(Allocator.TempJob);
         }
 
         [Test]
+#if UNITY_DOTSPLAYER_IL2CPP
+        // https://unity3d.atlassian.net/browse/DOTSR-1365
+        [Ignore("DOTSPLAYER_IL2CPP throws exception on AddrOfPinnedObject() in NativeArray")]
+#endif
         public void Deallocate_Persistent_NativeArray_From_Job()
         {
             TestDeallocateNativeArrayFromJob(Allocator.Persistent);
@@ -106,6 +115,47 @@ namespace Unity.Jobs.Tests.ManagedJobs
             job.Complete();
 
             Assert.AreEqual(expectedInput0, copyAndDestroyJob.output.ToArray());
+        }
+
+        public struct NestedDeallocateStruct
+        {
+            [DeallocateOnJobCompletion]
+            public NativeArray<int> input;
+        }
+
+        public struct TestDeallocateNested : IJob
+        {
+            public NestedDeallocateStruct nested;
+
+            public NativeArray<int> output;
+
+            public void Execute()
+            {
+                for (int i = 0; i < nested.input.Length; ++i)
+                    output[i] = nested.input[i];
+            }
+        }
+
+        [Test]
+        public void TestNestedDeallocateOnJobCompletion()
+        {
+            var tempNativeArray = new NativeArray<int>(10, Allocator.TempJob);
+            var outNativeArray = new NativeArray<int>(10, Allocator.TempJob);
+            for (int i = 0; i < 10; i++)
+                tempNativeArray[i] = i;
+
+            var job = new TestDeallocateNested
+            {
+                nested = new NestedDeallocateStruct() { input = tempNativeArray },
+                output = outNativeArray
+            };
+
+            var handle = job.Schedule();
+            handle.Complete();
+
+            outNativeArray.Dispose();
+            // TODO how to better assert that the tempNativeArray was actually disposed?
+            Assert.Throws<System.InvalidOperationException>(() => tempNativeArray.Dispose());
         }
     }
 }

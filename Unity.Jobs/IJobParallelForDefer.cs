@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs.LowLevel.Unsafe;
@@ -15,7 +15,7 @@ namespace Unity.Jobs
     /// Batch size should generally be chosen depending on the amount of work performed in the job. A simple job, for example adding a couple of float3 to each other should probably have a batch size of 32 to 128. However if the work performed is very expensive then it is best to use a small batch size, for expensive work a batch size of 1 is totally fine. IJobParallelFor performs work stealing using atomic operations. Batch sizes can be small but they are not for free.
     /// The returned JobHandle can be used to ensure that the job has completed. Or it can be passed to other jobs as a dependency, thus ensuring the jobs are executed one after another on the worker threads.
     /// </summary>
-    [JobProducerType(typeof (IJobParallelForDeferExtensions.JobParallelForDeferProducer<>))]
+    [JobProducerType(typeof(IJobParallelForDeferExtensions.JobParallelForDeferProducer<>))]
     public interface IJobParallelForDefer
     {
         /// <summary>
@@ -107,7 +107,7 @@ namespace Unity.Jobs
                 UnsafeUtility.AddressOf(ref jobData),
                 JobParallelForDeferProducer<T>.Initialize(), dependsOn, ScheduleMode.Batched);
 
-            var forEachListPtr = (byte*) forEachCount - sizeof(void*);
+            var forEachListPtr = (byte*)forEachCount - sizeof(void*);
             return JobsUtility.ScheduleParallelForDeferArraySize(ref scheduleParams, innerloopBatchCount,
                 forEachListPtr, null);
         }

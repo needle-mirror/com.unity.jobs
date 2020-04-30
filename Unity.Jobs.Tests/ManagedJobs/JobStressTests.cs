@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Jobs;
@@ -42,11 +43,8 @@ namespace Unity.Jobs.Tests.ManagedJobs
 
                 for (var i = 0; i < len; i++)
                 {
-                    if (job1.value[i] != i)
-                        Assert.AreEqual(i, job1.value[i]);
-
-                    if (job2.value[i] != i)
-                        Assert.AreEqual(i, job2.value[i]);
+                    Assert.AreEqual(i, job1.value[i]);
+                    Assert.AreEqual(i, job2.value[i]);
                 }
 
                 job1.value.Dispose();

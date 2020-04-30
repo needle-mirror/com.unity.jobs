@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using Unity.Collections;
 using Unity.Jobs.LowLevel.Unsafe;
 
@@ -41,6 +41,7 @@ class JobsMenu
 
         return true;
     }
+
 #endif // #if UNITY_2020_1_OR_NEWER
 
     const string kDebuggerMenu = "Jobs/JobsDebugger";
@@ -78,7 +79,7 @@ class JobsMenu
     {
         NativeLeakDetection.Mode = NativeLeakDetectionMode.Disabled;
     }
-    
+
     [MenuItem(kLeakOn)]
     static void SwitchLeaksOn()
     {
