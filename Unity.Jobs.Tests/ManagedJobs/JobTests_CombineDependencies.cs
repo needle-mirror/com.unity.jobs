@@ -103,10 +103,6 @@ namespace Unity.Jobs.Tests.ManagedJobs
         }
 
         [Test]
-#if UNITY_DOTSPLAYER_IL2CPP
-        // https://unity3d.atlassian.net/browse/DOTSR-1365
-        [Ignore("DOTSPLAYER_IL2CPP throws exception on AddrOfPinnedObject() in NativeArray")]
-#endif
         public void DeepCombineDependenciesWorks()
         {
             DeepCombineDependencies(5, 21);

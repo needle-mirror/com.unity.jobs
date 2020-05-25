@@ -76,20 +76,12 @@ namespace Unity.Jobs.Tests.ManagedJobs
         }
 
         [Test]
-#if UNITY_DOTSPLAYER_IL2CPP
-        // https://unity3d.atlassian.net/browse/DOTSR-1365
-        [Ignore("DOTSPLAYER_IL2CPP throws exception on AddrOfPinnedObject() in NativeArray")]
-#endif
         public void Deallocate_Temp_NativeArray_From_Job()
         {
             TestDeallocateNativeArrayFromJob(Allocator.TempJob);
         }
 
         [Test]
-#if UNITY_DOTSPLAYER_IL2CPP
-        // https://unity3d.atlassian.net/browse/DOTSR-1365
-        [Ignore("DOTSPLAYER_IL2CPP throws exception on AddrOfPinnedObject() in NativeArray")]
-#endif
         public void Deallocate_Persistent_NativeArray_From_Job()
         {
             TestDeallocateNativeArrayFromJob(Allocator.Persistent);
