@@ -2,10 +2,11 @@
 
 ## [0.2.10] - 2020-05-25
 
+**This version requires Unity 2019.3.12f1+**
+
 ### Changed
 
 * Updated dependencies of this package.
-* Updated minimum Unity Editor version to 2019.3.12f1 (84b23722532d)
 
 
 ## [0.2.9] - 2020-04-24
