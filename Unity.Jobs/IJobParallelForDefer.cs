@@ -35,8 +35,12 @@ namespace Unity.Jobs
             {
                 if (s_JobReflectionData == IntPtr.Zero)
                 {
+#if UNITY_2020_2_OR_NEWER
+                    s_JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T), typeof(T), (ExecuteJobFunction)Execute);
+#else
                     s_JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T), typeof(T),
                         JobType.ParallelFor, (ExecuteJobFunction)Execute);
+#endif
                 }
 
                 return s_JobReflectionData;
@@ -76,14 +80,25 @@ namespace Unity.Jobs
             where U : struct
         {
             void* atomicSafetyHandlePtr = null;
-            var scheduleParams = new JobsUtility.JobScheduleParameters(
-                UnsafeUtility.AddressOf(ref jobData),
-                JobParallelForDeferProducer<T>.Initialize(), dependsOn, ScheduleMode.Batched);
 
+            // Calculate the deferred atomic safety handle before constructing JobScheduleParameters so
+            // DOTS Runtime can validate the deferred list statically similar to the reflection based
+            // validation in Big Unity.
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             var safety = NativeListUnsafeUtility.GetAtomicSafetyHandle(ref list);
             atomicSafetyHandlePtr = UnsafeUtility.AddressOf(ref safety);
 #endif
+
+            var scheduleParams = new JobsUtility.JobScheduleParameters(
+                UnsafeUtility.AddressOf(ref jobData),
+                JobParallelForDeferProducer<T>.Initialize(), dependsOn,
+#if UNITY_2020_2_OR_NEWER
+                ScheduleMode.Parallel
+#else
+                ScheduleMode.Batched
+#endif
+                );
+
             return JobsUtility.ScheduleParallelForDeferArraySize(ref scheduleParams, innerloopBatchCount,
                 NativeListUnsafeUtility.GetInternalListDataPtrUnchecked(ref list), atomicSafetyHandlePtr);
         }
@@ -105,7 +120,13 @@ namespace Unity.Jobs
         {
             var scheduleParams = new JobsUtility.JobScheduleParameters(
                 UnsafeUtility.AddressOf(ref jobData),
-                JobParallelForDeferProducer<T>.Initialize(), dependsOn, ScheduleMode.Batched);
+                JobParallelForDeferProducer<T>.Initialize(), dependsOn,
+#if UNITY_2020_2_OR_NEWER
+                ScheduleMode.Parallel
+#else
+                ScheduleMode.Batched
+#endif
+);
 
             var forEachListPtr = (byte*)forEachCount - sizeof(void*);
             return JobsUtility.ScheduleParallelForDeferArraySize(ref scheduleParams, innerloopBatchCount,

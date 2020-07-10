@@ -146,7 +146,7 @@ public class ParallelFilterJobTests
     }
 
     [Test]
-    [Ignore("Currently thats legal, but only because filter jobs aren't implemented as parallel for right now...")]
+    [Ignore("DOTS-1959 Currently thats legal, but only because filter jobs aren't implemented as parallel for right now...")]
     public void AccessingWritable()
     {
         var list = new NativeList<int>(0, Allocator.Persistent);

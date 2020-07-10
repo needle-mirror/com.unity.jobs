@@ -147,7 +147,12 @@ namespace Unity.Jobs.Tests.ManagedJobs
 
             outNativeArray.Dispose();
             // TODO how to better assert that the tempNativeArray was actually disposed?
-            Assert.Throws<System.InvalidOperationException>(() => tempNativeArray.Dispose());
+#if UNITY_2020_2_OR_NEWER
+            Assert.Throws<ObjectDisposedException>(
+#else
+            Assert.Throws<InvalidOperationException>(
+#endif
+                () => tempNativeArray.Dispose());
         }
     }
 }

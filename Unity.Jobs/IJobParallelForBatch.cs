@@ -22,8 +22,12 @@ namespace Unity.Jobs
             {
                 if (s_JobReflectionData == IntPtr.Zero)
                 {
+#if UNITY_2020_2_OR_NEWER
+                    s_JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T), typeof(T), (ExecuteJobFunction)Execute);
+#else
                     s_JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T), typeof(T),
                         JobType.ParallelFor, (ExecuteJobFunction)Execute);
+#endif
                 }
 
                 return s_JobReflectionData;
@@ -55,7 +59,12 @@ namespace Unity.Jobs
                 UnsafeUtility.AddressOf(ref jobData),
                 JobParallelForBatchProducer<T>.Initialize(),
                 dependsOn,
-                ScheduleMode.Batched);
+#if UNITY_2020_2_OR_NEWER
+                ScheduleMode.Parallel
+#else
+                ScheduleMode.Batched
+#endif
+            );
 
             return JobsUtility.ScheduleParallelFor(ref scheduleParams, arrayLength, minIndicesPerJobCount);
         }

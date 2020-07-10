@@ -126,9 +126,6 @@ public class NativeListDeferredArrayTests
     }
 
     [Test]
-#if UNITY_DOTSPLAYER
-    [Ignore("DOTS runtime jobs don't track what lists are in use by the job")]
-#endif
     public void ResizeListWhileJobIsRunning()
     {
         var list = new NativeList<int>(Allocator.TempJob);
@@ -144,9 +141,6 @@ public class NativeListDeferredArrayTests
     }
 
     [Test]
-#if UNITY_DOTSPLAYER
-    [Ignore("DOTS runtime doesn't check for aliased list usage within a job")]
-#endif
     public void AliasArrayThrows()
     {
         var list = new NativeList<int>(Allocator.TempJob);
@@ -158,16 +152,30 @@ public class NativeListDeferredArrayTests
     }
 
     [Test]
-#if UNITY_DOTSPLAYER
-    [Ignore("DOTS runtime jobs don't track what lists are in use by the job")]
-#endif
+    public void DeferredListMustExistInJobData()
+    {
+        var list = new NativeList<int>(Allocator.TempJob);
+    
+        var job = new ParallelForWithoutList();
+        Assert.Throws<InvalidOperationException>(() => job.Schedule(list, 64));
+    
+        list.Dispose();
+    }
+
+    [Test]
     public void DeferredListCantBeDeletedWhileJobIsRunning()
     {
         var list = new NativeList<int>(Allocator.TempJob);
+        list.Resize(42, NativeArrayOptions.UninitializedMemory);
 
-        var job = new ParallelForWithoutList();
-        Assert.Throws<InvalidOperationException>(() => job.Schedule(list, 64));
+        var setValuesJob = new GetArrayValuesJobParallel { array = list.AsDeferredJobArray() };
+        var jobHandle = setValuesJob.Schedule(list, 3);
 
+        Assert.Throws<InvalidOperationException>(() => list.Dispose());
+
+        jobHandle.Complete();
+
+        // Actually clean up memory to avoid DisposeSentinel complaint
         list.Dispose();
     }
 
