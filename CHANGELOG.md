@@ -1,5 +1,9 @@
 # Change log
 
+## [0.5.0] - 2020-08-04
+
+* Updated dependencies of this package.
+
 ## [0.4.0] - 2020-07-10
 
 

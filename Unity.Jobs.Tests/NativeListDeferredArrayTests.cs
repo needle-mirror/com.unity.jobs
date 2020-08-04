@@ -3,9 +3,11 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Jobs.LowLevel.Unsafe;
 
 public class NativeListDeferredArrayTests
 {
+    private bool JobsDebuggerWasEnabled;
     struct AliasJob : IJob
     {
         public NativeArray<int> array;
@@ -53,6 +55,15 @@ public class NativeListDeferredArrayTests
         public void Execute(int index)
         {
         }
+    }
+
+    [SetUp]
+    public void Setup()
+    {
+        // Many ECS tests will only pass if the Jobs Debugger enabled;
+        // force it enabled for all tests, and restore the original value at teardown.
+        JobsDebuggerWasEnabled = JobsUtility.JobDebuggerEnabled;
+        JobsUtility.JobDebuggerEnabled = true;
     }
 
     [Test]
@@ -155,10 +166,10 @@ public class NativeListDeferredArrayTests
     public void DeferredListMustExistInJobData()
     {
         var list = new NativeList<int>(Allocator.TempJob);
-    
+
         var job = new ParallelForWithoutList();
         Assert.Throws<InvalidOperationException>(() => job.Schedule(list, 64));
-    
+
         list.Dispose();
     }
 
@@ -191,5 +202,11 @@ public class NativeListDeferredArrayTests
         Assert.Throws<IndexOutOfRangeException>(() => defer[0] = 5);
 
         list.Dispose();
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        JobsUtility.JobDebuggerEnabled = JobsDebuggerWasEnabled;
     }
 }
