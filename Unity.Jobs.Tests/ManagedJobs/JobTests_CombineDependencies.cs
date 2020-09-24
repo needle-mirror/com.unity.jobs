@@ -4,7 +4,7 @@ using Unity.Jobs;
 
 namespace Unity.Jobs.Tests.ManagedJobs
 {
-    public class JobTests_CombineDependencies
+    public class JobTests_CombineDependencies : JobTestsFixtureBasic
     {
         struct ArrayJob1 : IJob
         {

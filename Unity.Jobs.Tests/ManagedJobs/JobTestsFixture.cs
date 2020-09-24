@@ -4,7 +4,26 @@ using Unity.Jobs;
 
 namespace Unity.Jobs.Tests.ManagedJobs
 {
-    public class JobTestsFixture
+    public class JobTestsFixtureBasic
+    {
+        [SetUp]
+        public void Setup()
+        {
+#if UNITY_DOTSRUNTIME
+            Unity.Core.TempMemoryScope.EnterScope();
+#endif
+        }
+
+        [TearDown]
+        public void Teardown()
+        {
+#if UNITY_DOTSRUNTIME
+            Unity.Core.TempMemoryScope.ExitScope();
+#endif
+        }
+    }
+
+    public class JobTestsFixture : JobTestsFixtureBasic
     {
         /*
          * this used to test both, and maybe it should again, but we have to make GetExecuteMethod() work with

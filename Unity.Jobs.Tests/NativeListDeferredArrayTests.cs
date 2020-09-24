@@ -64,6 +64,10 @@ public class NativeListDeferredArrayTests
         // force it enabled for all tests, and restore the original value at teardown.
         JobsDebuggerWasEnabled = JobsUtility.JobDebuggerEnabled;
         JobsUtility.JobDebuggerEnabled = true;
+
+#if UNITY_DOTSRUNTIME
+        Unity.Core.TempMemoryScope.EnterScope();
+#endif
     }
 
     [Test]
@@ -207,6 +211,10 @@ public class NativeListDeferredArrayTests
     [TearDown]
     public void TearDown()
     {
+#if UNITY_DOTSRUNTIME
+        Unity.Core.TempMemoryScope.ExitScope();
+#endif
+
         JobsUtility.JobDebuggerEnabled = JobsDebuggerWasEnabled;
     }
 }

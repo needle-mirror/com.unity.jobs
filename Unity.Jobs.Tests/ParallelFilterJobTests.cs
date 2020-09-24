@@ -2,9 +2,10 @@ using NUnit.Framework;
 using System;
 using Unity.Jobs;
 using Unity.Collections;
+using Unity.Jobs.Tests.ManagedJobs;
 #pragma warning disable 0219
 
-public class ParallelFilterJobTests
+public class ParallelFilterJobTests : JobTestsFixtureBasic
 {
     struct NativeListAddMod7Job : IJob
     {
