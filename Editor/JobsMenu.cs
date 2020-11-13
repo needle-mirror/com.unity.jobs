@@ -4,7 +4,6 @@ using Unity.Jobs.LowLevel.Unsafe;
 
 class JobsMenu
 {
-#if UNITY_2020_1_OR_NEWER
     private static int savedJobWorkerCount = JobsUtility.JobWorkerCount;
 
     const string kUseJobThreads = "Jobs/Use Job Threads";
@@ -41,8 +40,6 @@ class JobsMenu
 
         return true;
     }
-
-#endif // #if UNITY_2020_1_OR_NEWER
 
     const string kDebuggerMenu = "Jobs/JobsDebugger";
 

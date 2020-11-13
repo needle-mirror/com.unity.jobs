@@ -7,6 +7,22 @@ using Unity.Jobs.LowLevel.Unsafe;
 
 namespace Unity.Jobs.Tests.ManagedJobs
 {
+#if UNITY_DOTSRUNTIME
+    public class DotsRuntimeFixmeAttribute : IgnoreAttribute
+    {
+        public DotsRuntimeFixmeAttribute(string msg = null) : base(msg == null ? "Test should work in DOTS Runtime but currently doesn't. Ignoring until fixed..." : msg)
+        {
+        }
+    }
+#else
+	public class DotsRuntimeFixmeAttribute : Attribute
+	{
+        public DotsRuntimeFixmeAttribute(string msg = null)
+        {
+        }
+	}
+#endif
+
 	[JobProducerType(typeof(IJobTestExtensions.JobTestProducer<>))]
 	public interface IJobTest
 	{
@@ -57,7 +73,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
 				JobData = jobData,
 				ProducerResourceToClean = dataForProducer
 			};
-			
+
 			var scheduleParams = new JobsUtility.JobScheduleParameters(
 				UnsafeUtility.AddressOf(ref jobTestWrapper),
 				JobTestProducer<T>.Initialize(),
@@ -73,12 +89,141 @@ namespace Unity.Jobs.Tests.ManagedJobs
 		}
 	}
 
+	public struct MyGenericResizeJob<T> : IJob where T : struct
+	{
+		public int m_ListLength;
+		public NativeList<T> m_GenericList;
+		public void Execute()
+		{
+			m_GenericList.Resize(m_ListLength, NativeArrayOptions.UninitializedMemory);
+		}
+	}
+
+	public struct MyGenericJobDefer<T> : IJobParallelForDefer where T: struct
+	{
+		public T m_Value;
+		[NativeDisableParallelForRestriction]
+		public NativeList<T> m_GenericList;
+		public void Execute(int index)
+		{
+			m_GenericList[index] = m_Value;
+		}
+	}
+
+    public struct GenericContainerResizeJob<T, U> : IJob
+        where T : struct, INativeList<U>
+        where U : struct
+    {
+        public int m_ListLength;
+        public T m_GenericList;
+        public void Execute()
+        {
+            m_GenericList.Length = m_ListLength;
+        }
+    }
+
+    public struct GenericContainerJobDefer<T, U> : IJobParallelForDefer
+        where T : struct, INativeList<U>
+        where U : struct
+    {
+        public U m_Value;
+        [NativeDisableParallelForRestriction]
+        public T m_GenericList;
+
+        public void Execute(int index)
+        {
+            m_GenericList[index] = m_Value;
+        }
+    }
+
     public class JobTests : JobTestsFixture
     {
-        /*
-         * these two tests used to test that a job that inherited from both IJob and IJobParallelFor would work as expected
-         * but that's probably crazy.
-         */
+        public void ScheduleGenericContainerJob<T, U>(T container, U value)
+            where T : struct, INativeList<U>
+            where U : struct
+        {
+            var j0 = new GenericContainerResizeJob<T, U>();
+            var length = 5;
+            j0.m_ListLength = length;
+            j0.m_GenericList = container;
+            var handle0 = j0.Schedule();
+
+            var j1 = new GenericContainerJobDefer<T, U>();
+            j1.m_Value = value;
+            j1.m_GenericList = j0.m_GenericList;
+            INativeList<U> iList = j0.m_GenericList;
+            j1.Schedule((NativeList<U>)iList, 1, handle0).Complete();
+
+            Assert.AreEqual(length, j1.m_GenericList.Length);
+            for (int i = 0; i != j1.m_GenericList.Length; i++)
+                Assert.AreEqual(value, j1.m_GenericList[i]);
+        }
+
+        [Test, DotsRuntimeFixme("From a pure generic context, DOTS Runtime cannot determing what closed generic jobs are scheduled. See DOTSR-2347")]
+        public void ValidateContainerSafetyInGenericJob_ContainerIsGenericParameter()
+        {
+            var list = new NativeList<int>(1, Allocator.TempJob);
+            ScheduleGenericContainerJob(list, 5);
+            list.Dispose();
+        }
+
+        public void GenericScheduleJobPair<T>(T value) where T : struct
+        {
+            var j0 = new MyGenericResizeJob<T>();
+            var length = 5;
+            j0.m_ListLength = length;
+            j0.m_GenericList = new NativeList<T>(1, Allocator.TempJob);
+            var handle0 = j0.Schedule();
+
+            var j1 = new MyGenericJobDefer<T>();
+            j1.m_Value = value;
+            j1.m_GenericList = j0.m_GenericList;
+            j1.Schedule(j0.m_GenericList, 1, handle0).Complete();
+
+            Assert.AreEqual(length, j1.m_GenericList.Length);
+            for (int i = 0; i != j1.m_GenericList.Length; i++)
+                Assert.AreEqual(value, j1.m_GenericList[i]);
+            j0.m_GenericList.Dispose();
+        }
+
+        [Test]
+        public void ScheduleGenericJobPairFloat()
+        {
+            GenericScheduleJobPair(10f);
+        }
+
+        [Test]
+        public void ScheduleGenericJobPairDouble()
+        {
+            GenericScheduleJobPair<double>(10.0);
+        }
+
+        [Test]
+        public void ScheduleGenericJobPairInt()
+        {
+            GenericScheduleJobPair(20);
+        }
+
+        [Test]
+	    public void SchedulingGenericJobUnsafelyThrows()
+	    {
+		    var j0 = new MyGenericResizeJob<int>();
+		    var length = 5;
+		    j0.m_ListLength = length;
+		    j0.m_GenericList = new NativeList<int>(1, Allocator.TempJob);
+		    var handle0 = j0.Schedule();
+		    var j1 = new MyGenericJobDefer<int>();
+		    j1.m_Value = 6;
+		    j1.m_GenericList = j0.m_GenericList;
+		    Assert.Throws<InvalidOperationException>(()=>j1.Schedule(j0.m_GenericList, 1).Complete());
+		    handle0.Complete();
+		    j0.m_GenericList.Dispose();
+	    }
+
+	    /*
+	     * these two tests used to test that a job that inherited from both IJob and IJobParallelFor would work as expected
+	     * but that's probably crazy.
+	     */
         /*[Test]
         public void Scheduling()
         {

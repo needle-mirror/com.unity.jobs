@@ -1,12 +1,12 @@
 {
   "name": "com.unity.jobs",
   "displayName": "Jobs",
-  "version": "0.7.0-preview.17",
+  "version": "0.8.0-preview.23",
   "unity": "2020.1",
-  "unityRelease": "0b15",
+  "unityRelease": "9f1",
   "description": "The Jobs package provides additional job types like IJobParallelForBatch, IJobParallelForDefer, and IJobParallelForFilter.",
   "dependencies": {
-    "com.unity.collections": "0.14.0-preview.16",
+    "com.unity.collections": "0.15.0-preview.21",
     "com.unity.mathematics": "1.2.1"
   },
   "keywords": [
@@ -15,11 +15,11 @@
     "unity"
   ],
   "upmCi": {
-    "footprint": "9018f7f30537f3daed3c68708eed93356e7b7b84"
+    "footprint": "349a0e191daa83a5ab70010ce290cbb6c59df7dd"
   },
   "repository": {
     "url": "https://github.com/Unity-Technologies/dots.git",
     "type": "git",
-    "revision": "4cf433ea3c6dc7750e272011e25ae9d1c01009a2"
+    "revision": "011950b3e6b7c3fabea375fdac55ad367be62814"
   }
 }

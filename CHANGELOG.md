@@ -1,5 +1,12 @@
 # Change log
 
+## [0.8.0] - 2020-11-13
+
+### Changed
+
+* Update minimum editor version to 2020.1.2f1
+*Added tests for generic jobs.
+
 ## [0.7.0] - 2020-09-24
 
 * Updated dependencies of this package.
