@@ -2,6 +2,9 @@ using System;
 using Unity.Jobs.LowLevel.Unsafe;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine.Scripting;
+using System.Diagnostics;
+using Unity.Burst;
 using Unity.Mathematics;
 
 namespace Unity.Jobs
@@ -24,25 +27,16 @@ namespace Unity.Jobs
                 public T JobData;
             }
 
-            static IntPtr s_JobReflectionData;
+            internal static readonly SharedStatic<IntPtr> jobReflectionData = SharedStatic<IntPtr>.GetOrCreate<JobParallelForFilterProducer<T>>();
 
-            public static IntPtr Initialize()
+            [Preserve]
+            public static void Initialize()
             {
-                if (s_JobReflectionData == IntPtr.Zero)
-                    // @TODO: Use parallel for job... (Need to expose combine jobs)
-
-                    s_JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(JobWrapper), typeof(T),
-#if !UNITY_2020_2_OR_NEWER
-                        JobType.Single,
-#endif
-                        (ExecuteJobFunction)Execute);
-
-                return s_JobReflectionData;
+                if (jobReflectionData.Data == IntPtr.Zero)
+                    jobReflectionData.Data = JobsUtility.CreateJobReflectionData(typeof(JobWrapper), typeof(T), (ExecuteJobFunction)Execute);
             }
 
             public delegate void ExecuteJobFunction(ref JobWrapper jobWrapper, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex);
-
-            // @TODO: Use parallel for job... (Need to expose combine jobs)
 
             public static void Execute(ref JobWrapper jobWrapper, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex)
             {
@@ -101,6 +95,23 @@ namespace Unity.Jobs
             }
         }
 
+        /// <summary>
+        /// This method is only to be called by automatically generated setup code.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void EarlyJobInit<T>()
+            where T : struct, IJobParallelForFilter
+        {
+            JobParallelForFilterProducer<T>.Initialize();
+        }
+
+        [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
+        private static void CheckReflectionDataCorrect(IntPtr reflectionData)
+        {
+            if (reflectionData == IntPtr.Zero)
+                throw new InvalidOperationException("Reflection data was not set up by a call to Initialize()");
+        }
+
         public static unsafe JobHandle ScheduleAppend<T>(this T jobData, NativeList<int> indices, int arrayLength, int innerloopBatchCount, JobHandle dependsOn = new JobHandle()) where T : struct, IJobParallelForFilter
         {
             JobParallelForFilterProducer<T>.JobWrapper jobWrapper = new JobParallelForFilterProducer<T>.JobWrapper()
@@ -110,13 +121,9 @@ namespace Unity.Jobs
                 appendCount = arrayLength
             };
 
-            var scheduleParams = new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref jobWrapper), JobParallelForFilterProducer<T>.Initialize(), dependsOn,
-#if UNITY_2020_2_OR_NEWER
-                ScheduleMode.Parallel
-#else
-                ScheduleMode.Batched
-#endif
-            );
+            var reflectionData = JobParallelForFilterProducer<T>.jobReflectionData.Data;
+            CheckReflectionDataCorrect(reflectionData);
+            var scheduleParams = new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref jobWrapper), reflectionData, dependsOn, ScheduleMode.Single);
             return JobsUtility.Schedule(ref scheduleParams);
         }
 
@@ -129,16 +136,40 @@ namespace Unity.Jobs
                 appendCount = -1
             };
 
-            var scheduleParams = new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref jobWrapper), JobParallelForFilterProducer<T>.Initialize(), dependsOn,
-#if UNITY_2020_2_OR_NEWER
-                ScheduleMode.Parallel
-#else
-                ScheduleMode.Batched
-#endif
-            );
+            var reflectionData = JobParallelForFilterProducer<T>.jobReflectionData.Data;
+            CheckReflectionDataCorrect(reflectionData);
+            var scheduleParams = new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref jobWrapper), reflectionData, dependsOn, ScheduleMode.Single);
             return JobsUtility.Schedule(ref scheduleParams);
         }
 
-        //@TODO: RUN
+        public static unsafe void RunAppend<T>(this T jobData, NativeList<int> indices, int arrayLength) where T : struct, IJobParallelForFilter
+        {
+            JobParallelForFilterProducer<T>.JobWrapper jobWrapper = new JobParallelForFilterProducer<T>.JobWrapper()
+            {
+                JobData = jobData,
+                outputIndices = indices,
+                appendCount = arrayLength
+            };
+
+            var reflectionData = JobParallelForFilterProducer<T>.jobReflectionData.Data;
+            CheckReflectionDataCorrect(reflectionData);
+            var scheduleParams = new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref jobWrapper), reflectionData, new JobHandle(), ScheduleMode.Run);
+            JobsUtility.Schedule(ref scheduleParams);
+        }
+
+        public static unsafe void RunFilter<T>(this T jobData, NativeList<int> indices) where T : struct, IJobParallelForFilter
+        {
+            JobParallelForFilterProducer<T>.JobWrapper jobWrapper = new JobParallelForFilterProducer<T>.JobWrapper()
+            {
+                JobData = jobData,
+                outputIndices = indices,
+                appendCount = -1
+            };
+
+            var reflectionData = JobParallelForFilterProducer<T>.jobReflectionData.Data;
+            CheckReflectionDataCorrect(reflectionData);
+            var scheduleParams = new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref jobWrapper), reflectionData, new JobHandle(), ScheduleMode.Run);
+            JobsUtility.Schedule(ref scheduleParams);
+        }
     }
 }

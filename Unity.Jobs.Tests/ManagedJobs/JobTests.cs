@@ -5,6 +5,11 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Jobs.LowLevel.Unsafe;
 
+[assembly: RegisterGenericJobType(typeof(Unity.Jobs.Tests.ManagedJobs.MyGenericJobDefer<int>))]
+[assembly: RegisterGenericJobType(typeof(Unity.Jobs.Tests.ManagedJobs.MyGenericJobDefer<double>))]
+[assembly: RegisterGenericJobType(typeof(Unity.Jobs.Tests.ManagedJobs.MyGenericJobDefer<float>))]
+[assembly: RegisterGenericJobType(typeof(Unity.Jobs.Tests.ManagedJobs.GenericContainerJobDefer<NativeList<int>, int>))]
+
 namespace Unity.Jobs.Tests.ManagedJobs
 {
 #if UNITY_DOTSRUNTIME
@@ -87,7 +92,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
 
 			return JobsUtility.Schedule(ref scheduleParams);
 		}
-	}
+    }
 
 	public struct MyGenericResizeJob<T> : IJob where T : unmanaged
     {
@@ -222,11 +227,13 @@ namespace Unity.Jobs.Tests.ManagedJobs
 	    }
 #endif
 
-        [Test, DotsRuntimeFixme("From a pure generic context, DOTS Runtime cannot determine what closed generic jobs are scheduled. See DOTSR-2347")]
+        struct DontReferenceThisTypeOutsideOfThisTest { public int v; }
+        
+        [Test]
         public void SchedulingGenericJobFromGenericContextUnsafelyThrows()
         {
-            var list = new NativeList<int>(1, Allocator.TempJob);
-            ScheduleGenericJobUnsafely(list, 5);
+            var list = new NativeList<DontReferenceThisTypeOutsideOfThisTest>(1, Allocator.TempJob);
+            ScheduleGenericJobUnsafely(list, new DontReferenceThisTypeOutsideOfThisTest { v = 5 });
             list.Dispose();
         }
 
@@ -245,11 +252,8 @@ namespace Unity.Jobs.Tests.ManagedJobs
             j1.m_GenericList = j0.m_GenericList;
             INativeList<U> iList = j0.m_GenericList;
             Assert.Throws<InvalidOperationException>(()=>j1.Schedule((NativeList<U>)iList, 1).Complete());
-            // Note we now pass the correct dependency to complete the job otherwise we won't be able to dispose the list
-            // which will cause other tests to fail when they detect leaks. We can't just throw and then dispose since the
-            // safety system will see that the list was scheduled and should first have the job completed (however we
-            // are intentionally setting up a job that cannot complete)
-            j1.Schedule((NativeList<U>)iList, 1, handle0).Complete();
+
+            handle0.Complete();  // complete this so we can dispose the nativelist
         }
 
         /*

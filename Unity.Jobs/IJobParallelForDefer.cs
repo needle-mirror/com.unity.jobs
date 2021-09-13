@@ -2,6 +2,9 @@ using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs.LowLevel.Unsafe;
+using UnityEngine.Scripting;
+using System.Diagnostics;
+using Unity.Burst;
 
 namespace Unity.Jobs
 {
@@ -29,16 +32,13 @@ namespace Unity.Jobs
     {
         internal struct JobParallelForDeferProducer<T> where T : struct, IJobParallelForDefer
         {
-            static IntPtr s_JobReflectionData;
+            internal static readonly SharedStatic<IntPtr> jobReflectionData = SharedStatic<IntPtr>.GetOrCreate<JobParallelForDeferProducer<T>>();
 
-            public static unsafe IntPtr Initialize()
+            [Preserve]
+            internal static void Initialize()
             {
-                if (s_JobReflectionData == IntPtr.Zero)
-                {
-                    s_JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T), typeof(T), (ExecuteJobFunction)Execute);
-                }
-
-                return s_JobReflectionData;
+                if (jobReflectionData.Data == IntPtr.Zero)
+                    jobReflectionData.Data = JobsUtility.CreateJobReflectionData(typeof(T), (ExecuteJobFunction)Execute);
             }
 
             public delegate void ExecuteJobFunction(ref T jobData, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex);
@@ -57,6 +57,23 @@ namespace Unity.Jobs
                         jobData.Execute(i);
                 }
             }
+        }
+
+        /// <summary>
+        /// This method is only to be called by automatically generated setup code.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void EarlyJobInit<T>()
+            where T : struct, IJobParallelForDefer
+        {
+            JobParallelForDeferProducer<T>.Initialize();
+        }
+
+        [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
+        private static void CheckReflectionDataCorrect(IntPtr reflectionData)
+        {
+            if (reflectionData == IntPtr.Zero)
+                throw new InvalidOperationException("Reflection data was not set up by a call to Initialize()");
         }
 
         /// <summary>
@@ -163,13 +180,10 @@ namespace Unity.Jobs
             void *atomicSafetyHandlePtr,
             JobHandle dependsOn) where T : struct, IJobParallelForDefer
         {
-            var scheduleParams = new JobsUtility.JobScheduleParameters(
-                UnsafeUtility.AddressOf(ref jobData),
-                JobParallelForDeferProducer<T>.Initialize(), dependsOn,
-                ScheduleMode.Parallel);
-
-            return JobsUtility.ScheduleParallelForDeferArraySize(ref scheduleParams, innerloopBatchCount,
-                forEachListPtr, atomicSafetyHandlePtr);
+            var reflectionData = JobParallelForDeferProducer<T>.jobReflectionData.Data;
+            CheckReflectionDataCorrect(reflectionData);
+            var scheduleParams = new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref jobData), reflectionData, dependsOn, ScheduleMode.Parallel);
+            return JobsUtility.ScheduleParallelForDeferArraySize(ref scheduleParams, innerloopBatchCount, forEachListPtr, atomicSafetyHandlePtr);
         }
     }
 }

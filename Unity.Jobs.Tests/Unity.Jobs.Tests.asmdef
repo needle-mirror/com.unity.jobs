@@ -3,7 +3,9 @@
     "references": [
         "Unity.Jobs",
         "Unity.Collections",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Entities"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
@@ -17,5 +19,6 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": []
+    "versionDefines": [],
+    "noEngineReferences": false
 }

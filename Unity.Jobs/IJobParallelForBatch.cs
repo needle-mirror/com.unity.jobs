@@ -1,8 +1,9 @@
 using System;
-using System.Runtime.InteropServices;
-using Unity.Collections;
 using Unity.Jobs.LowLevel.Unsafe;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine.Scripting;
+using System.Diagnostics;
+using Unity.Burst;
 
 namespace Unity.Jobs
 {
@@ -16,24 +17,16 @@ namespace Unity.Jobs
     {
         internal struct JobParallelForBatchProducer<T> where T : struct, IJobParallelForBatch
         {
-            static IntPtr s_JobReflectionData;
+            internal static readonly SharedStatic<IntPtr> jobReflectionData = SharedStatic<IntPtr>.GetOrCreate<JobParallelForBatchProducer<T>>();
 
-            public static IntPtr Initialize()
+            [Preserve]
+            internal static void Initialize()
             {
-                if (s_JobReflectionData == IntPtr.Zero)
-                {
-#if UNITY_2020_2_OR_NEWER
-                    s_JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T), typeof(T), (ExecuteJobFunction)Execute);
-#else
-                    s_JobReflectionData = JobsUtility.CreateJobReflectionData(typeof(T), typeof(T),
-                        JobType.ParallelFor, (ExecuteJobFunction)Execute);
-#endif
-                }
-
-                return s_JobReflectionData;
+                if (jobReflectionData.Data == IntPtr.Zero)
+                    jobReflectionData.Data = JobsUtility.CreateJobReflectionData(typeof(T), (ExecuteJobFunction)Execute);
             }
 
-            public delegate void ExecuteJobFunction(ref T jobData, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex);
+            internal delegate void ExecuteJobFunction(ref T jobData, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex);
             public unsafe static void Execute(ref T jobData, IntPtr additionalPtr, IntPtr bufferRangePatchData, ref JobRanges ranges, int jobIndex)
             {
                 while (true)
@@ -52,28 +45,37 @@ namespace Unity.Jobs
             }
         }
 
+        /// <summary>
+        /// This method is only to be called by automatically generated setup code.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void EarlyJobInit<T>()
+            where T : struct, IJobParallelForBatch
+        {
+            JobParallelForBatchProducer<T>.Initialize();
+        }
+
+        [Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS")]
+        private static void CheckReflectionDataCorrect(IntPtr reflectionData)
+        {
+            if (reflectionData == IntPtr.Zero)
+                throw new InvalidOperationException("Reflection data was not set up by an Initialize() call");
+        }
+
         public static unsafe JobHandle ScheduleBatch<T>(this T jobData, int arrayLength, int minIndicesPerJobCount,
             JobHandle dependsOn = new JobHandle()) where T : struct, IJobParallelForBatch
         {
-            var scheduleParams = new JobsUtility.JobScheduleParameters(
-                UnsafeUtility.AddressOf(ref jobData),
-                JobParallelForBatchProducer<T>.Initialize(),
-                dependsOn,
-#if UNITY_2020_2_OR_NEWER
-                ScheduleMode.Parallel
-#else
-                ScheduleMode.Batched
-#endif
-            );
-
+            var reflectionData = JobParallelForBatchProducer<T>.jobReflectionData.Data;
+            CheckReflectionDataCorrect(reflectionData);
+            var scheduleParams = new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref jobData), reflectionData, dependsOn, ScheduleMode.Parallel);
             return JobsUtility.ScheduleParallelFor(ref scheduleParams, arrayLength, minIndicesPerJobCount);
         }
 
         public static unsafe void RunBatch<T>(this T jobData, int arrayLength) where T : struct, IJobParallelForBatch
         {
-            var scheduleParams =
-                new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref jobData),
-                    JobParallelForBatchProducer<T>.Initialize(), new JobHandle(), ScheduleMode.Run);
+            var reflectionData = JobParallelForBatchProducer<T>.jobReflectionData.Data;
+            CheckReflectionDataCorrect(reflectionData);
+            var scheduleParams = new JobsUtility.JobScheduleParameters(UnsafeUtility.AddressOf(ref jobData), reflectionData, new JobHandle(), ScheduleMode.Run);
             JobsUtility.ScheduleParallelFor(ref scheduleParams, arrayLength, arrayLength);
         }
     }

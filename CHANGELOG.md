@@ -1,10 +1,14 @@
-# Change log
+# Changelog
 
-## [0.11.0] - 2021-09-13
+## [0.50.0] - 2021-09-13
 
 ### Added
 
 * `Unity.Entities.RegisterGenericJobTypeAttribute` has been moved to Unity.Jobs as `Unity.Jobs.RegisterGenericJobTypeAttribute`.
+* Job reflection data ILPP
+* IJob* types use SharedStatic so they can be burst compiled eventually
+* Early job initialization now happens during domain reload rather than delayed until EntityManager.Initialize
+
 
 
 ## [0.10.0] - 2021-03-15
