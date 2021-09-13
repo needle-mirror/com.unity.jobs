@@ -1,30 +1,13 @@
 # Change log
 
-## [Unreleased]
+## [0.11.0] - 2021-09-13
 
 ### Added
 
 * `Unity.Entities.RegisterGenericJobTypeAttribute` has been moved to Unity.Jobs as `Unity.Jobs.RegisterGenericJobTypeAttribute`.
 
-### Changed
-
-
-### Deprecated
-
-
-### Removed
-
-
-### Fixed
-
-
-### Security
-
-
-
 
 ## [0.10.0] - 2021-03-15
-
 
 ### Changed
 
@@ -42,7 +25,6 @@
 * Update minimum editor version to 2020.2.1f1-dots.3
 
 
-
 ## [0.8.0] - 2020-11-13
 
 ### Changed
@@ -50,19 +32,23 @@
 * Update minimum editor version to 2020.1.2f1
 *Added tests for generic jobs.
 
+
 ## [0.7.0] - 2020-09-24
 
 * Updated dependencies of this package.
 
+
 ## [0.6.0] - 2020-08-26
 
 * Updated dependencies of this package.
+
+
 ## [0.5.0] - 2020-08-04
 
 * Updated dependencies of this package.
 
-## [0.4.0] - 2020-07-10
 
+## [0.4.0] - 2020-07-10
 
 ### Changed
 
@@ -72,11 +58,13 @@
 
 * This version is not compatible with 2020.2.0a17. Please update to the forthcoming alpha.
 
+
 ## [0.3.0] - 2020-05-27
 
 ### Changed
 
 * Updated minimum Unity Editor version to 2020.1.0b9 (9c0aec301c8d)
+
 
 ## [0.2.10] - 2020-05-04
 
