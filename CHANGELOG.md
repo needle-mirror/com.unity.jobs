@@ -1,5 +1,48 @@
 # Change log
 
+## [Unreleased]
+
+### Added
+
+* `Unity.Entities.RegisterGenericJobTypeAttribute` has been moved to Unity.Jobs as `Unity.Jobs.RegisterGenericJobTypeAttribute`.
+
+### Changed
+
+
+### Deprecated
+
+
+### Removed
+
+
+### Fixed
+
+
+### Security
+
+
+
+
+## [0.10.0] - 2021-03-15
+
+
+### Changed
+
+* `IJobParallelForDeferExtensions.Schedule` generic `U` constraint from `struct` to `unmanaged`.
+
+
+## [0.9.0] - 2021-01-26
+
+### Added
+
+* `CLILeakDetectionSwitcher` to be used by Yamato.
+
+### Changed
+
+* Update minimum editor version to 2020.2.1f1-dots.3
+
+
+
 ## [0.8.0] - 2020-11-13
 
 ### Changed

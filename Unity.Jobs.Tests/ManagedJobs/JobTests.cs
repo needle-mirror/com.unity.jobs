@@ -89,8 +89,8 @@ namespace Unity.Jobs.Tests.ManagedJobs
 		}
 	}
 
-	public struct MyGenericResizeJob<T> : IJob where T : struct
-	{
+	public struct MyGenericResizeJob<T> : IJob where T : unmanaged
+    {
 		public int m_ListLength;
 		public NativeList<T> m_GenericList;
 		public void Execute()
@@ -99,7 +99,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
 		}
 	}
 
-	public struct MyGenericJobDefer<T> : IJobParallelForDefer where T: struct
+	public struct MyGenericJobDefer<T> : IJobParallelForDefer where T: unmanaged
 	{
 		public T m_Value;
 		[NativeDisableParallelForRestriction]
@@ -140,7 +140,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
     {
         public void ScheduleGenericContainerJob<T, U>(T container, U value)
             where T : struct, INativeList<U>
-            where U : struct
+            where U : unmanaged
         {
             var j0 = new GenericContainerResizeJob<T, U>();
             var length = 5;
@@ -159,7 +159,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
                 Assert.AreEqual(value, j1.m_GenericList[i]);
         }
 
-        [Test, DotsRuntimeFixme("From a pure generic context, DOTS Runtime cannot determing what closed generic jobs are scheduled. See DOTSR-2347")]
+        [Test]
         public void ValidateContainerSafetyInGenericJob_ContainerIsGenericParameter()
         {
             var list = new NativeList<int>(1, Allocator.TempJob);
@@ -167,7 +167,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
             list.Dispose();
         }
 
-        public void GenericScheduleJobPair<T>(T value) where T : struct
+        public void GenericScheduleJobPair<T>(T value) where T : unmanaged
         {
             var j0 = new MyGenericResizeJob<T>();
             var length = 5;
@@ -204,6 +204,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
             GenericScheduleJobPair(20);
         }
 
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
         [Test]
 	    public void SchedulingGenericJobUnsafelyThrows()
 	    {
@@ -219,8 +220,39 @@ namespace Unity.Jobs.Tests.ManagedJobs
 		    handle0.Complete();
 		    j0.m_GenericList.Dispose();
 	    }
+#endif
 
-	    /*
+        [Test, DotsRuntimeFixme("From a pure generic context, DOTS Runtime cannot determine what closed generic jobs are scheduled. See DOTSR-2347")]
+        public void SchedulingGenericJobFromGenericContextUnsafelyThrows()
+        {
+            var list = new NativeList<int>(1, Allocator.TempJob);
+            ScheduleGenericJobUnsafely(list, 5);
+            list.Dispose();
+        }
+
+        void ScheduleGenericJobUnsafely<T, U>(T container, U value)
+            where T : struct, INativeList<U>
+            where U : unmanaged
+        {
+            var j0 = new GenericContainerResizeJob<T, U>();
+            var length = 5;
+            j0.m_ListLength = length;
+            j0.m_GenericList = container;
+            var handle0 = j0.Schedule();
+
+            var j1 = new GenericContainerJobDefer<T, U>();
+            j1.m_Value = value;
+            j1.m_GenericList = j0.m_GenericList;
+            INativeList<U> iList = j0.m_GenericList;
+            Assert.Throws<InvalidOperationException>(()=>j1.Schedule((NativeList<U>)iList, 1).Complete());
+            // Note we now pass the correct dependency to complete the job otherwise we won't be able to dispose the list
+            // which will cause other tests to fail when they detect leaks. We can't just throw and then dispose since the
+            // safety system will see that the list was scheduled and should first have the job completed (however we
+            // are intentionally setting up a job that cannot complete)
+            j1.Schedule((NativeList<U>)iList, 1, handle0).Complete();
+        }
+
+        /*
 	     * these two tests used to test that a job that inherited from both IJob and IJobParallelFor would work as expected
 	     * but that's probably crazy.
 	     */
@@ -321,6 +353,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
             Assert.AreEqual(expectedInput0, copyAndDestroyJob.output.ToArray());
         }
 
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
         public struct NestedDeallocateStruct
         {
 			// This should deallocate even though it's a nested field
@@ -361,10 +394,9 @@ namespace Unity.Jobs.Tests.ManagedJobs
             outNativeArray.Dispose();
 
 			// Ensure released safety handle indicating invalid buffer
-			Assert.Throws<InvalidOperationException>(() => { AtomicSafetyHandle.CheckExistsAndThrow(NativeArrayUnsafeUtility.GetAtomicSafetyHandle(tempNativeArray)); });
-			Assert.Throws<InvalidOperationException>(() => { AtomicSafetyHandle.CheckExistsAndThrow(NativeArrayUnsafeUtility.GetAtomicSafetyHandle(job.nested.input)); });
+			Assert.Throws<ObjectDisposedException>(() => { AtomicSafetyHandle.CheckExistsAndThrow(NativeArrayUnsafeUtility.GetAtomicSafetyHandle(tempNativeArray)); });
+			Assert.Throws<ObjectDisposedException>(() => { AtomicSafetyHandle.CheckExistsAndThrow(NativeArrayUnsafeUtility.GetAtomicSafetyHandle(job.nested.input)); });
         }
-
 
         public struct TestJobProducerJob : IJobTest
         {
@@ -391,10 +423,97 @@ namespace Unity.Jobs.Tests.ManagedJobs
             handle.Complete();
 
 			// Check job data
-			Assert.Throws<InvalidOperationException>(() => { AtomicSafetyHandle.CheckExistsAndThrow(NativeArrayUnsafeUtility.GetAtomicSafetyHandle(tempNativeArray)); });
-			Assert.Throws<InvalidOperationException>(() => { AtomicSafetyHandle.CheckExistsAndThrow(NativeArrayUnsafeUtility.GetAtomicSafetyHandle(job.jobStructData)); });
+			Assert.Throws<ObjectDisposedException>(() => { AtomicSafetyHandle.CheckExistsAndThrow(NativeArrayUnsafeUtility.GetAtomicSafetyHandle(tempNativeArray)); });
+			Assert.Throws<ObjectDisposedException>(() => { AtomicSafetyHandle.CheckExistsAndThrow(NativeArrayUnsafeUtility.GetAtomicSafetyHandle(job.jobStructData)); });
 			// Check job producer
-			Assert.Throws<InvalidOperationException>(() => { AtomicSafetyHandle.CheckExistsAndThrow(NativeArrayUnsafeUtility.GetAtomicSafetyHandle(tempNativeArray2)); });
+			Assert.Throws<ObjectDisposedException>(() => { AtomicSafetyHandle.CheckExistsAndThrow(NativeArrayUnsafeUtility.GetAtomicSafetyHandle(tempNativeArray2)); });
+        }
+
+        public struct CopyJob : IJob
+        {
+            public NativeList<int> List1;
+            public NativeList<int> List2;
+
+            public void Execute()
+            {
+                List1 = List2;
+            }
+        }
+
+        [Test]
+        public unsafe void TestContainerCopy_EnsureSafetyHandlesCopyAndDisposeProperly()
+        {
+            var list1 = new NativeList<int>(10, Allocator.TempJob);
+            var list2 = new NativeList<int>(10, Allocator.TempJob);
+            list1.Add(1);
+            list2.Add(2);
+
+            var job = new CopyJob
+            {
+                List1 = list1,
+                List2 = list2
+            };
+
+            job.Schedule().Complete();
+
+            list1.Dispose();
+            list2.Dispose();
+        }
+#endif
+
+        struct LargeJobParallelForDefer : IJobParallelForDefer
+        {
+            public FixedString4096Bytes StrA;
+            public FixedString4096Bytes StrB;
+            public FixedString4096Bytes StrC;
+            public FixedString4096Bytes StrD;
+            [NativeDisableParallelForRestriction]
+            public NativeArray<int> TotalLengths;
+            [ReadOnly]
+            public NativeList<float> Unused; // Schedule() from NativeList.Length requires that the list be passed into the job
+
+            public void Execute(int index)
+            {
+                TotalLengths[0] = StrA.Length + StrB.Length + StrC.Length + StrD.Length;
+            }
+        }
+
+        public enum IterationCountMode
+        {
+            List, Pointer
+        }
+
+        [Test]
+        public unsafe void IJobParallelForDefer_LargeJobStruct_ScheduleRefWorks(
+            [Values(IterationCountMode.List, IterationCountMode.Pointer)] IterationCountMode countMode)
+        {
+            using(var lengths = new NativeArray<int>(1, Allocator.TempJob))
+            {
+                var dummyList = new NativeList<float>(Allocator.TempJob);
+                dummyList.Add(5.0f);
+                var job = new LargeJobParallelForDefer
+                {
+                    StrA = "A",
+                    StrB = "BB",
+                    StrC = "CCC",
+                    StrD = "DDDD",
+                    TotalLengths = lengths,
+                    Unused = dummyList,
+                };
+
+                if (countMode == IterationCountMode.List)
+                {
+                    Assert.DoesNotThrow(() => job.ScheduleByRef(dummyList, 1).Complete());
+                }
+                else if (countMode == IterationCountMode.Pointer)
+                {
+                    var lengthArray = new NativeArray<int>(1, Allocator.TempJob);
+                    lengthArray[0] = 1;
+                    Assert.DoesNotThrow(() => job.ScheduleByRef((int*)lengthArray.GetUnsafePtr(), 1).Complete());
+                    lengthArray.Dispose();
+                }
+                dummyList.Dispose();
+            }
         }
     }
 }

@@ -63,10 +63,12 @@ public class NativeListDeferredArrayTests
         // Many ECS tests will only pass if the Jobs Debugger enabled;
         // force it enabled for all tests, and restore the original value at teardown.
         JobsDebuggerWasEnabled = JobsUtility.JobDebuggerEnabled;
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
         JobsUtility.JobDebuggerEnabled = true;
+#endif
 
 #if UNITY_DOTSRUNTIME
-        Unity.Core.TempMemoryScope.EnterScope();
+        Unity.Runtime.TempMemoryScope.EnterScope();
 #endif
     }
 
@@ -125,6 +127,7 @@ public class NativeListDeferredArrayTests
         list.Dispose();
     }
 
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
     [Test]
     public void ResizedListToDeferredJobArray()
     {
@@ -207,14 +210,17 @@ public class NativeListDeferredArrayTests
 
         list.Dispose();
     }
+#endif
 
     [TearDown]
     public void TearDown()
     {
 #if UNITY_DOTSRUNTIME
-        Unity.Core.TempMemoryScope.ExitScope();
+        Unity.Runtime.TempMemoryScope.ExitScope();
 #endif
 
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
         JobsUtility.JobDebuggerEnabled = JobsDebuggerWasEnabled;
+#endif
     }
 }

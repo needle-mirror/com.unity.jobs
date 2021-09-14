@@ -10,7 +10,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
         public void Setup()
         {
 #if UNITY_DOTSRUNTIME
-            Unity.Core.TempMemoryScope.EnterScope();
+            Unity.Runtime.TempMemoryScope.EnterScope();
 #endif
         }
 
@@ -18,7 +18,7 @@ namespace Unity.Jobs.Tests.ManagedJobs
         public void Teardown()
         {
 #if UNITY_DOTSRUNTIME
-            Unity.Core.TempMemoryScope.ExitScope();
+            Unity.Runtime.TempMemoryScope.ExitScope();
 #endif
         }
     }

@@ -3,8 +3,7 @@
     "references": [
         "Unity.Jobs",
         "Unity.Collections",
-        "Unity.Mathematics",
-        "Unity.ZeroJobs"
+        "Unity.Mathematics"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
