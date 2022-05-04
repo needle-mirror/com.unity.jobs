@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.51.0] - 2022-05-04
+
+### Changed
+
+* Package Dependencies
+    * `com.unity.mathematics` to version `1.2.6`
+    * `com.unity.collections` to version  `1.3.1`
+    * `com.unity.burst` to version `1.6.6`
+
 ## [0.50.0] - 2021-09-13
 
 ### Added
