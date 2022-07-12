@@ -1,23 +1,12 @@
 {
     "name": "Unity.Jobs.CodeGen",
-    "references": [
-        "Unity.Burst",
-        "Unity.Collections",
-        "Unity.Jobs",
-		"Unity.Properties"
-    ],
+    "references": [],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": true,
     "overrideReferences": true,
-    "precompiledReferences": [
-        "Mono.Cecil.dll",
-        "Mono.Cecil.Rocks.dll",
-        "Mono.Cecil.Pdb.dll",
-        "Unity.IL2CPP",
-        "Unity.IL2CPP.Common"
-    ],
+    "precompiledReferences": [],
     "autoReferenced": false
 }

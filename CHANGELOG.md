@@ -1,15 +1,13 @@
 # Changelog
 
-## [0.51.0] - 2022-05-04
+## [0.70.0] - 2022-07-12
 
 ### Changed
 
-* Package Dependencies
-    * `com.unity.mathematics` to version `1.2.6`
-    * `com.unity.collections` to version  `1.3.1`
-    * `com.unity.burst` to version `1.6.6`
+* com.unity.jobs is a deprecated package. This code for this package has been combined into com.unity.collections-1.4.0, please prefer that package instead.
 
-## [0.50.0] - 2021-09-13
+
+## [0.11.0] - 2021-09-13
 
 ### Added
 

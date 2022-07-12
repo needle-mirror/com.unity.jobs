@@ -1,15 +1,12 @@
 {
   "name": "com.unity.jobs",
   "displayName": "Jobs",
-  "version": "0.51.0-preview.32",
+  "version": "0.70.0-preview.7",
   "unity": "2020.3",
-  "unityRelease": "0f1",
-  "description": "The Jobs package provides additional job types like IJobParallelForBatch, IJobParallelForDefer, and IJobParallelForFilter.",
+  "unityRelease": "30f1",
+  "description": "The Jobs package provides additional job types like IJobParallelForBatch.",
   "dependencies": {
-    "com.unity.burst": "1.6.6",
-    "com.unity.collections": "1.3.1",
-    "com.unity.mathematics": "1.2.6",
-    "com.unity.nuget.mono-cecil": "1.10.1"
+    "com.unity.collections": "1.4.0"
   },
   "keywords": [
     "dots",
@@ -17,14 +14,14 @@
     "unity"
   ],
   "upm": {
-    "changelog": "### Changed\n\n* Package Dependencies\n    * `com.unity.mathematics` to version `1.2.6`\n    * `com.unity.collections` to version  `1.3.1`\n    * `com.unity.burst` to version `1.6.6`"
+    "changelog": "### Changed\n\n* com.unity.jobs is a deprecated package. This code for this package has been combined into com.unity.collections-1.4.0, please prefer that package instead."
   },
   "upmCi": {
-    "footprint": "3d6da3324241f6ef93ed67c70f133379d0326714"
+    "footprint": "5ce5b846cf8e5d771600c6a663d8f266df54aa46"
   },
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/dots.git",
     "type": "git",
-    "revision": "469d2b30300a7ff2c2b15f72ee8613e374c37b63"
+    "revision": "063a98897b40805f53b859bb426ce664229d0c00"
   }
 }

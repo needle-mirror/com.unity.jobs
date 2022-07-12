@@ -1,10 +1,6 @@
 {
     "name": "Unity.Jobs",
-    "references": [
-        "Unity.Mathematics",
-        "Unity.Collections",
-        "Unity.Burst"
-    ],
+    "references": [],
     "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],
